@@ -1,41 +1,33 @@
 import type { Metadata } from "next";
-import { ThemeProvider } from "@/components/theme-provider"
-import { Geist, Geist_Mono } from "next/font/google";
+import { getServerSession } from "next-auth";
+import { ThemeProvider } from "@/components/theme-provider";
+import { Toaster } from "@/components/ui/sonner";
+import { authOptions } from "@/lib/auth";
+import { AppNavbar } from "@/components/app-navbar";
 import "./globals.css";
-//import { useIsMobile } from "@/hooks/use-mobile"
-import { Navbar03 } from "@/components/ui/shadcn-io/navbar-03";
-import { ModeToggle } from "@/components/ui/toggle";
-import { Toaster } from "@/components/ui/sonner"
 
-const geistSans = Geist({
-  variable: "--font-geist-sans",
-  subsets: ["latin"],
-});
+export const metadata: Metadata = {
+  title: "Simple Finance",
+  description: "Make finance simple",
+};
 
-const geistMono = Geist_Mono({
-  variable: "--font-geist-mono",
-  subsets: ["latin"],
-});
-
-
-
-export default function RootLayout({
+export default async function RootLayout({
   children,
 }: Readonly<{
   children: React.ReactNode;
 }>) {
+  const session = await getServerSession(authOptions);
+
   return (
     <html lang="en" suppressHydrationWarning>
-      <body className={`${geistSans.variable} ${geistMono.variable} antialiased`}>
-        <ThemeProvider
-              attribute="class"
-              defaultTheme="system"
-              enableSystem
-              disableTransitionOnChange
-          >
-          <Navbar03 />
-          {children}
-          <Toaster position="top-center"/>
+      <body className="min-h-screen bg-background font-[Space_Grotesk,_Avenir_Next,_Segoe_UI,_sans-serif] antialiased">
+        <ThemeProvider attribute="class" defaultTheme="system" enableSystem disableTransitionOnChange>
+          <AppNavbar
+            isAuthenticated={Boolean(session?.user?.id)}
+            userName={session?.user?.name}
+          />
+          <main>{children}</main>
+          <Toaster position="top-center" />
         </ThemeProvider>
       </body>
     </html>

@@ -4,24 +4,22 @@ import { zodResolver } from "@hookform/resolvers/zod"
 import { useForm } from "react-hook-form"
 import { z } from "zod"
 import { useRouter } from 'next/navigation';
+import { useState } from "react";
 import { Button } from "@/components/ui/button"
 import {
   Form,
   FormControl,
-  FormDescription,
   FormField,
   FormItem,
   FormLabel,
   FormMessage,
 } from "@/components/ui/form"
 import {
-    Card,
-    CardAction,
-    CardContent,
-    CardDescription,
-    CardFooter,
-    CardHeader,
-    CardTitle,
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
   } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
 import { toast } from "sonner"  
@@ -52,8 +50,9 @@ const registrationSchema = z.object({
 
   type RegistrationFormValues = z.infer<typeof registrationSchema>
 
-export default function SignIn(){
+export default function SignUp(){
     const router = useRouter()
+    const [loading, setLoading] = useState(false)
     const form = useForm<RegistrationFormValues>({
         resolver: zodResolver(registrationSchema),
         defaultValues: {
@@ -66,6 +65,7 @@ export default function SignIn(){
     })
 
    async function onSubmit(data: RegistrationFormValues){
+        setLoading(true)
         try {
             const name = data.username
             const email = data.email
@@ -81,19 +81,23 @@ export default function SignIn(){
                 router.push("/sign-in")
                 toast.success('Account created successfully!')
             } else {
-                toast.error("Something went wrong. Please try again.")
+                const data = await response.json().catch(() => null)
+                toast.error(data?.error ?? "Something went wrong. Please try again.")
             }
         } catch (error) {
             console.error('Error submitting form:', error);
+        } finally {
+            setLoading(false)
         }
     }
     return (
-        <div className="flex flex-row justify-center items center mt-20">
-            <Card className="w-full max-w-sm">
+        <div className="relative mx-auto flex min-h-[80vh] w-full max-w-6xl items-center justify-center px-4 py-10 md:px-8">
+            <div className="pointer-events-none absolute inset-0 -z-10 bg-[radial-gradient(circle_at_20%_20%,rgba(45,212,191,0.16),transparent_30%),radial-gradient(circle_at_80%_10%,rgba(56,189,248,0.16),transparent_35%)]" />
+            <Card className="w-full max-w-md border-border/70 bg-card/90 backdrop-blur">
                 <CardHeader>
-                    <CardTitle >Create your account</CardTitle>
+                    <CardTitle className="text-2xl">Create your account</CardTitle>
                     <CardDescription>
-                        Access all that <u>Simple Finance</u> has to offer with just one account
+                        Join Simple Finance and make finance simple.
                     </CardDescription>
                 </CardHeader>
                 <CardContent>
@@ -161,7 +165,7 @@ export default function SignIn(){
                                     </FormItem>
                                 )}
                             />
-                           <Button type="submit" className="w-full">
+                           <Button type="submit" className="w-full" disabled={loading}>
                                 Sign Up
                             </Button>
                         </form>

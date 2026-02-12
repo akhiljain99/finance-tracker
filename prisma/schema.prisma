@@ -1,56 +1,180 @@
-// schema.prisma
-
 generator client {
   provider = "prisma-client-js"
 }
 
 datasource db {
   provider = "postgresql"
-  url = env("PRISMA_DATABASE_URL") // uses connection pooling
-}
-
-model Income {
-  id        Int     @id @default(autoincrement())
-  source    String
-  person    String?
-  date      String 
-  amount    Float
-  incomeType String
-  user      User?   @relation(fields: [userId], references: [id])
-  userId    Int?
+  url      = env("DATABASE_URL")
 }
 
 model User {
-  id            Int    @id @default(autoincrement())
-  name          String? 
+  id            Int       @id @default(autoincrement())
+  name          String?
   email         String?   @unique
-  password      String?   @unique
-  createdAt     DateTime  @default(now()) @map(name: "created_at")
-  income        Income[]
-  expense       Expenses[]
-  goals         Goals[]
-  @@map(name: "users")
+  emailVerified DateTime?
+  image         String?
+  passwordHash  String?
+
+  // next-auth
+  accounts      Account[]
+  sessions      Session[]
+
+  // finance stuff
+  categories    Category[]
+  transactions  Transaction[]
+  investments   Investment[]
+  emailDigests  EmailDigestLog[]
+  goals         Goal[]
+  budgets       Budget[]
+
+  createdAt     DateTime @default(now())
 }
 
-model Expenses{
-    id         Int @id @default(autoincrement())
-    date       String 
-    person     String
-    amount     Float
-    user       User? @relation(fields: [userId], references: [id])
-    category   String
-    userId     Int
+model Account {
+  id                 Int    @id @default(autoincrement())
+  userId             Int
+  type               String
+  provider           String
+  providerAccountId  String
+  refresh_token      String?  @db.Text
+  access_token       String?  @db.Text
+  expires_at         Int?
+  token_type         String?
+  scope              String?
+  id_token           String?  @db.Text
+  session_state      String?
+
+  user               User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([provider, providerAccountId])
 }
 
-model Category{
-    id       Int @id @default(autoincrement())
-    name     String 
+model Session {
+  id           Int    @id @default(autoincrement())
+  sessionToken String   @unique
+  userId       Int
+  expires      DateTime
+
+  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
 }
 
-model Goals{
-    id      Int @id @default(autoincrement())  
-    type    String
-    amount  Int
-    user    User?   @relation(fields: [userId], references: [id])
-    userId  Int?
+model VerificationToken {
+  identifier String
+  token      String   @unique
+  expires    DateTime
+
+  @@unique([identifier, token])
+}
+
+/// --- Finance domain --- ///
+
+model Category {
+  id        Int    @id @default(autoincrement())
+  userId    Int
+  name      String
+  type      CategoryType
+  createdAt DateTime @default(now())
+
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  transactions Transaction[]
+  goals     Goal[]
+  budgets   Budget[]
+
+  @@unique([userId, name, type])
+}
+
+model Transaction {
+  id             Int    @id @default(autoincrement())
+  userId          Int
+  categoryId      Int
+  amount          Decimal  @db.Decimal(12,2)
+  transactionDate DateTime
+  notes           String?
+  createdAt       DateTime @default(now())
+
+  user            User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  category        Category @relation(fields: [categoryId], references: [id], onDelete: Restrict)
+}
+
+model Goal {
+  id            Int    @id @default(autoincrement())
+  userId        Int
+  name          String
+  type          String
+  targetAmount  Decimal      @db.Decimal(12,2)
+  period        String
+  categoryId    Int?
+  createdAt     DateTime     @default(now())
+
+  user          User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+  category      Category?    @relation(fields: [categoryId], references: [id])
+}
+
+model Budget {
+  id          Int    @id @default(autoincrement())
+  userId      Int
+  categoryId  Int
+  month       Int
+  year        Int
+  amountLimit Decimal  @db.Decimal(12,2)
+
+  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  category    Category @relation(fields: [categoryId], references: [id])
+}
+
+model Investment {
+  id             Int                 @id @default(autoincrement())
+  userId         Int
+  assetType      InvestmentAssetType
+  name           String
+  symbol         String?
+  amountInvested Decimal             @db.Decimal(12,2)
+  currentValue   Decimal             @db.Decimal(12,2)
+  purchasedOn    DateTime
+  notes          String?
+  createdAt      DateTime            @default(now())
+
+  user           User                @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model EmailDigestLog {
+  id           Int       @id @default(autoincrement())
+  userId       Int
+  digestDate   DateTime  @db.Date
+  month        Int
+  year         Int
+  totalExpense Decimal   @db.Decimal(12,2)
+  createdAt    DateTime  @default(now())
+
+  user         User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, digestDate])
+}
+
+enum CategoryType {
+  income
+  expense
+}
+
+enum InvestmentAssetType {
+  stock
+  crypto
+  real_estate
+  etf
+  bond
+  mutual_fund
+  cash
+  other
+}
+
+enum GoalType {
+  saving
+  income
+}
+
+enum GoalPeriod {
+  weekly
+  monthly
+  yearly
+  lifetime
 }
