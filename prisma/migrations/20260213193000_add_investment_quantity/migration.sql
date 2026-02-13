@@ -1,0 +1,2 @@
+ALTER TABLE "Investment"
+ADD COLUMN "quantity" DECIMAL(18,6) NOT NULL DEFAULT 1;

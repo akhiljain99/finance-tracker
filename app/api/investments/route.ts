@@ -10,7 +10,9 @@ const investmentSchema = z.object({
   name: z.string().trim().min(2).max(80),
   symbol: z.string().trim().max(12).optional(),
   amountInvested: z.coerce.number().positive(),
-  currentValue: z.coerce.number().positive(),
+  quantity: z.coerce.number().positive().optional(),
+  currentUnitPrice: z.coerce.number().positive().optional(),
+  currentValue: z.coerce.number().positive().optional(),
   purchasedOn: z.string(),
   notes: z.string().trim().max(240).optional(),
 });
@@ -21,6 +23,7 @@ function normalizeInvestment(item: {
   name: string;
   symbol: string | null;
   amountInvested: unknown;
+  quantity: unknown;
   currentValue: unknown;
   purchasedOn: Date;
   notes: string | null;
@@ -31,10 +34,37 @@ function normalizeInvestment(item: {
     name: item.name,
     symbol: item.symbol,
     amountInvested: absAmount(item.amountInvested),
+    quantity: absAmount(item.quantity) || 1,
     currentValue: absAmount(item.currentValue),
     purchasedOn: item.purchasedOn,
     notes: item.notes,
   };
+}
+
+function normalizeSymbol(value: string | undefined): string | null {
+  const normalized = value?.trim().toUpperCase();
+  return normalized && normalized.length > 0 ? normalized : null;
+}
+
+function resolveCurrentValue(input: {
+  quantity: number;
+  currentUnitPrice?: number;
+  currentValue?: number;
+  amountInvested: number;
+}): number {
+  const unitPrice = input.currentUnitPrice !== undefined
+    ? absAmount(input.currentUnitPrice)
+    : null;
+
+  if (unitPrice && unitPrice > 0) {
+    return unitPrice * input.quantity;
+  }
+
+  if (input.currentValue !== undefined) {
+    return absAmount(input.currentValue);
+  }
+
+  return absAmount(input.amountInvested);
 }
 
 export async function GET(req: NextRequest) {
@@ -84,15 +114,28 @@ export async function POST(request: Request) {
     if (Number.isNaN(purchasedOn.getTime())) {
       return NextResponse.json({ error: "Invalid date" }, { status: 400 });
     }
+    const quantity = absAmount(body.quantity ?? 1);
+    if (!Number.isFinite(quantity) || quantity <= 0) {
+      return NextResponse.json({ error: "Invalid quantity" }, { status: 400 });
+    }
+
+    const normalizedSymbol = normalizeSymbol(body.symbol);
+    const currentValue = resolveCurrentValue({
+      quantity,
+      currentUnitPrice: body.currentUnitPrice,
+      currentValue: body.currentValue,
+      amountInvested: body.amountInvested,
+    });
 
     const investment = await prisma.investment.create({
       data: {
         userId,
         assetType: body.assetType,
         name: body.name,
-        symbol: body.symbol || null,
+        symbol: normalizedSymbol,
         amountInvested: absAmount(body.amountInvested),
-        currentValue: absAmount(body.currentValue),
+        quantity,
+        currentValue,
         purchasedOn,
         notes: body.notes || null,
       },

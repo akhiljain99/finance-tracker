@@ -31,6 +31,7 @@ type InvestmentItem = {
   name: string;
   symbol?: string | null;
   amountInvested: number;
+  quantity: number;
   currentValue: number;
   purchasedOn: string;
   notes?: string | null;
@@ -61,6 +62,30 @@ function humanizeAssetType(value: string): string {
   return toTitleCase(value.replace(/_/g, " "));
 }
 
+function parsePositiveNumber(value: string): number | null {
+  const parsed = Number(value);
+  if (!Number.isFinite(parsed) || parsed <= 0) {
+    return null;
+  }
+  return parsed;
+}
+
+function formatQuantity(value: number): string {
+  if (Number.isInteger(value)) {
+    return value.toLocaleString("en-US");
+  }
+
+  return value.toLocaleString("en-US", { maximumFractionDigits: 6 });
+}
+
+function sanitizeTickerInput(value: string): string {
+  return value
+    .trim()
+    .toUpperCase()
+    .replace(/^\$/, "")
+    .replace(/\s+/g, "");
+}
+
 async function readJsonSafe<T>(response: Response): Promise<T | null> {
   const contentType = response.headers.get("content-type") ?? "";
   if (!contentType.includes("application/json")) {
@@ -89,7 +114,8 @@ export function TrackerClient() {
   const [investmentName, setInvestmentName] = useState("");
   const [symbol, setSymbol] = useState("");
   const [amountInvested, setAmountInvested] = useState("");
-  const [currentValue, setCurrentValue] = useState("");
+  const [quantity, setQuantity] = useState("1");
+  const [currentUnitPrice, setCurrentUnitPrice] = useState("");
   const [purchasedOn, setPurchasedOn] = useState<Date | undefined>(new Date());
   const [investmentNotes, setInvestmentNotes] = useState("");
 
@@ -144,6 +170,15 @@ export function TrackerClient() {
     void fetchAll();
   }, [fetchAll]);
 
+  const parsedQuantity = useMemo(() => parsePositiveNumber(quantity), [quantity]);
+  const manualUnitPrice = useMemo(() => parsePositiveNumber(currentUnitPrice), [currentUnitPrice]);
+  const resolvedUnitPrice = manualUnitPrice;
+  const resolvedQuantity = parsedQuantity;
+  const calculatedCurrentValue = useMemo(() => {
+    if (!resolvedQuantity || !resolvedUnitPrice) return null;
+    return resolvedQuantity * resolvedUnitPrice;
+  }, [resolvedQuantity, resolvedUnitPrice]);
+
   async function submitTransaction(event: FormEvent) {
     event.preventDefault();
     const parsedAmount = Number(amount);
@@ -190,12 +225,18 @@ export function TrackerClient() {
   async function submitInvestment(event: FormEvent) {
     event.preventDefault();
 
-    const invested = Number(amountInvested);
-    const current = Number(currentValue);
-    if (!Number.isFinite(invested) || invested <= 0 || !Number.isFinite(current) || current <= 0) {
-      toast.error("Enter valid investment values.");
+    const invested = parsePositiveNumber(amountInvested);
+    if (!invested) {
+      toast.error("Enter a valid amount invested.");
       return;
     }
+
+    const quantityValue = parsePositiveNumber(quantity);
+    if (!quantityValue) {
+      toast.error("Enter a valid quantity.");
+      return;
+    }
+
     if (investmentName.trim().length < 2) {
       toast.error("Add an investment name.");
       return;
@@ -205,14 +246,25 @@ export function TrackerClient() {
       return;
     }
 
+    const manualPrice = parsePositiveNumber(currentUnitPrice);
+    const unitPrice = manualPrice;
+    if (!unitPrice) {
+      toast.error("Enter a valid current unit price.");
+      return;
+    }
+
+    const current = unitPrice * quantityValue;
+
     const response = await fetch("/api/investments", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
         assetType,
         name: investmentName.trim(),
-        symbol: symbol.trim() || undefined,
+        symbol: sanitizeTickerInput(symbol) || undefined,
         amountInvested: invested,
+        quantity: quantityValue,
+        currentUnitPrice: unitPrice,
         currentValue: current,
         purchasedOn: format(purchasedOn, "yyyy-MM-dd"),
         notes: investmentNotes.trim() || undefined,
@@ -229,7 +281,8 @@ export function TrackerClient() {
     setInvestmentName("");
     setSymbol("");
     setAmountInvested("");
-    setCurrentValue("");
+    setQuantity("1");
+    setCurrentUnitPrice("");
     setInvestmentNotes("");
     await fetchAll();
   }
@@ -325,6 +378,11 @@ export function TrackerClient() {
         cell: ({ row }) => <span>{currency.format(row.original.amountInvested)}</span>,
       },
       {
+        accessorKey: "quantity",
+        header: "Units",
+        cell: ({ row }) => <span>{formatQuantity(row.original.quantity || 1)}</span>,
+      },
+      {
         accessorKey: "currentValue",
         header: "Current value",
         cell: ({ row }) => <span>{currency.format(row.original.currentValue)}</span>,
@@ -361,6 +419,9 @@ export function TrackerClient() {
         <h1 className="text-3xl font-semibold tracking-tight">Finance Tracker</h1>
         <p className="text-muted-foreground">
           Add expenses, income, and investments. Everything updates your dashboard automatically.
+        </p>
+        <p className="mt-2 text-xs text-muted-foreground">
+          Current value is calculated from unit price and quantity.
         </p>
       </section>
 
@@ -459,8 +520,14 @@ export function TrackerClient() {
                   <Input id="investment-name" value={investmentName} onChange={(event) => setInvestmentName(event.target.value)} placeholder="Bitcoin, Apple..." />
                 </div>
                 <div className="grid gap-2">
-                  <Label htmlFor="symbol">Ticker</Label>
-                  <Input id="symbol" value={symbol} onChange={(event) => setSymbol(event.target.value)} placeholder="BTC, AAPL..." />
+                  <Label htmlFor="symbol">Ticker (optional)</Label>
+                  <Input
+                    id="symbol"
+                    value={symbol}
+                    onChange={(event) => setSymbol(event.target.value)}
+                    onBlur={() => setSymbol((current) => sanitizeTickerInput(current))}
+                    placeholder="BTC, AAPL..."
+                  />
                 </div>
               </div>
               <div className="grid grid-cols-2 gap-3">
@@ -469,9 +536,35 @@ export function TrackerClient() {
                   <Input id="invested" value={amountInvested} onChange={(event) => setAmountInvested(event.target.value)} placeholder="0.00" />
                 </div>
                 <div className="grid gap-2">
-                  <Label htmlFor="current">Current value</Label>
-                  <Input id="current" value={currentValue} onChange={(event) => setCurrentValue(event.target.value)} placeholder="0.00" />
+                  <Label htmlFor="quantity">Units / quantity</Label>
+                  <Input
+                    id="quantity"
+                    value={quantity}
+                    onChange={(event) => setQuantity(event.target.value)}
+                    placeholder="1"
+                  />
                 </div>
+              </div>
+              <div className="grid gap-2">
+                <Label htmlFor="current-unit-price">Current unit price</Label>
+                <Input
+                  id="current-unit-price"
+                  value={currentUnitPrice}
+                  onChange={(event) => setCurrentUnitPrice(event.target.value)}
+                  placeholder="0.00"
+                />
+                <p className="text-xs text-muted-foreground">
+                  Enter the latest unit price for this investment.
+                </p>
+              </div>
+              <div className="grid gap-2">
+                <Label htmlFor="current">Current value (auto)</Label>
+                <Input
+                  id="current"
+                  value={calculatedCurrentValue !== null ? currency.format(calculatedCurrentValue) : ""}
+                  placeholder="Calculated from price x quantity"
+                  readOnly
+                />
               </div>
               <div className="grid gap-2">
                 <Label htmlFor="purchased-on">Purchase date</Label>

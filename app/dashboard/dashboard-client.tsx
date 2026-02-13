@@ -51,13 +51,17 @@ export function DashboardClient({ name }: DashboardClientProps) {
   useEffect(() => {
     let active = true;
 
-    const run = async () => {
+    const loadDashboard = async (showLoading: boolean) => {
       try {
-        setLoading(true);
-        setErrorMessage(null);
+        if (showLoading) {
+          setLoading(true);
+          setErrorMessage(null);
+        }
 
-        const res = await fetch("/api/dashboard/overview?months=6");
+        const res = await fetch("/api/dashboard/overview?months=6", { cache: "no-store" });
         if (!res.ok) {
+          if (!showLoading) return;
+
           let message = "Could not load your dashboard right now.";
           if (res.status === 401) {
             message = "Your session expired. Please sign in again.";
@@ -71,25 +75,35 @@ export function DashboardClient({ name }: DashboardClientProps) {
 
         const payload = (await res.json()) as DashboardResponse;
         if (active) {
+          setErrorMessage(null);
           setData(payload);
         }
       } catch (error) {
+        if (!showLoading) {
+          console.error("Failed to refresh dashboard overview:", error);
+          return;
+        }
         if (active) {
           setData(null);
           setErrorMessage("Could not load your dashboard right now.");
         }
         console.error("Failed to load dashboard overview:", error);
       } finally {
-        if (active) {
+        if (active && showLoading) {
           setLoading(false);
         }
       }
     };
 
-    void run();
+    void loadDashboard(true);
+
+    const interval = setInterval(() => {
+      void loadDashboard(false);
+    }, 60_000);
 
     return () => {
       active = false;
+      clearInterval(interval);
     };
   }, []);
 

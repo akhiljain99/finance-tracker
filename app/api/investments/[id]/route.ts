@@ -13,6 +13,7 @@ const updateSchema = z.object({
   name: z.string().trim().min(2).max(80).optional(),
   symbol: z.string().trim().max(12).nullable().optional(),
   amountInvested: z.coerce.number().positive().optional(),
+  quantity: z.coerce.number().positive().optional(),
   currentValue: z.coerce.number().positive().optional(),
   purchasedOn: z.string().optional(),
   notes: z.string().trim().max(240).nullable().optional(),
@@ -64,6 +65,7 @@ export async function PUT(request: Request, { params }: RouteContext) {
     name?: string;
     symbol?: string | null;
     amountInvested?: number;
+    quantity?: number;
     currentValue?: number;
     purchasedOn?: Date;
     notes?: string | null;
@@ -73,6 +75,7 @@ export async function PUT(request: Request, { params }: RouteContext) {
   if (body.name) data.name = body.name;
   if (body.symbol !== undefined) data.symbol = body.symbol || null;
   if (body.amountInvested !== undefined) data.amountInvested = absAmount(body.amountInvested);
+  if (body.quantity !== undefined) data.quantity = absAmount(body.quantity);
   if (body.currentValue !== undefined) data.currentValue = absAmount(body.currentValue);
   if (body.notes !== undefined) data.notes = body.notes;
   if (body.purchasedOn) {
@@ -108,6 +111,7 @@ export async function PUT(request: Request, { params }: RouteContext) {
           name: investment.name,
           symbol: investment.symbol,
           amountInvested: absAmount(investment.amountInvested),
+          quantity: absAmount(investment.quantity) || 1,
           currentValue: absAmount(investment.currentValue),
           purchasedOn: investment.purchasedOn,
           notes: investment.notes,
