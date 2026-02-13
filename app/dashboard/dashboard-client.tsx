@@ -94,17 +94,17 @@ export function DashboardClient({ name }: DashboardClientProps) {
   }, []);
 
   if (loading) {
-    return <div className="mx-auto w-full max-w-6xl px-4 py-12 md:px-8">Loading dashboard...</div>;
+    return <div className="mx-auto w-full max-w-6xl animate-in fade-in-0 px-4 py-12 duration-500 md:px-8">Loading dashboard...</div>;
   }
 
   if (errorMessage) {
     return (
       <div className="relative mx-auto w-full max-w-6xl px-4 py-8 md:px-8">
         <section className="mb-8 space-y-2">
-          <h1 className="text-3xl font-semibold tracking-tight md:text-4xl">Welcome back, {name}</h1>
+          <h1 className="text-3xl font-semibold tracking-tight md:text-4xl">Welcome Back, {name}</h1>
           <p className="text-muted-foreground">{errorMessage}</p>
         </section>
-        <Card className="max-w-xl">
+        <Card className="max-w-xl border-border/80 bg-card/90 shadow-sm">
           <CardHeader>
             <CardTitle>Dashboard unavailable</CardTitle>
             <CardDescription>Try refreshing, then check your tracker page.</CardDescription>
@@ -123,7 +123,7 @@ export function DashboardClient({ name }: DashboardClientProps) {
     return (
       <div className="relative mx-auto w-full max-w-6xl px-4 py-8 md:px-8">
         <section className="mb-8 space-y-2">
-          <h1 className="text-3xl font-semibold tracking-tight md:text-4xl">Welcome back, {name}</h1>
+          <h1 className="text-3xl font-semibold tracking-tight md:text-4xl">Welcome Back, {name}</h1>
           <p className="text-muted-foreground">No dashboard data yet.</p>
         </section>
       </div>
@@ -142,10 +142,10 @@ export function DashboardClient({ name }: DashboardClientProps) {
       <div className="relative mx-auto w-full max-w-6xl px-4 py-8 md:px-8">
         <section className="mb-8 space-y-2">
           <p className="text-sm uppercase tracking-[0.16em] text-muted-foreground">{data.summary.month}</p>
-          <h1 className="text-3xl font-semibold tracking-tight md:text-4xl">Welcome back, {name}</h1>
+          <h1 className="text-3xl font-semibold tracking-tight md:text-4xl">Welcome Back, {name}</h1>
           <p className="text-muted-foreground">No transactions or investments yet.</p>
         </section>
-        <Card className="max-w-xl">
+        <Card className="max-w-xl border-border/80 bg-card/90 shadow-sm">
           <CardHeader>
             <CardTitle>Your dashboard is ready</CardTitle>
             <CardDescription>
@@ -165,17 +165,18 @@ export function DashboardClient({ name }: DashboardClientProps) {
   const positiveSavings = data.summary.savings >= 0;
 
   return (
-    <div className="relative mx-auto w-full max-w-6xl px-4 py-8 md:px-8">
-      <div className="pointer-events-none absolute inset-0 -z-10 bg-[radial-gradient(circle_at_10%_0%,rgba(56,189,248,0.16),transparent_22%),radial-gradient(circle_at_85%_0%,rgba(34,197,94,0.12),transparent_18%)]" />
+    <div className="relative overflow-hidden">
+      <div className="pointer-events-none absolute inset-0 -z-10 bg-[radial-gradient(circle_at_12%_0%,rgba(16,163,127,0.14),transparent_24%),radial-gradient(circle_at_88%_0%,rgba(67,140,255,0.12),transparent_20%)]" />
+      <div className="mx-auto w-full max-w-6xl animate-in fade-in-0 px-4 py-8 duration-500 md:px-8">
 
-      <section className="mb-8 space-y-2">
+      <section className="mb-8 animate-in fade-in-0 slide-in-from-bottom-2 space-y-2 duration-500 [animation-fill-mode:both]">
         <p className="text-sm uppercase tracking-[0.16em] text-muted-foreground">{data.summary.month}</p>
-        <h1 className="text-3xl font-semibold tracking-tight md:text-4xl">Welcome back, {name}</h1>
+        <h1 className="text-3xl font-semibold tracking-tight md:text-4xl">Welcome Back, {name}</h1>
         <p className="text-muted-foreground">Your financial control room for spending, income, and investments.</p>
       </section>
 
-      <section className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
-        <Card className="border-border/70 bg-card/90">
+      <section className="grid animate-in gap-4 fade-in-0 slide-in-from-bottom-2 duration-500 [animation-delay:90ms] [animation-fill-mode:both] md:grid-cols-2 xl:grid-cols-4">
+        <Card className="border-border/80 bg-card/90 shadow-sm transition-transform duration-200 hover:-translate-y-0.5">
           <CardHeader className="pb-2">
             <CardDescription>Income this month</CardDescription>
             <CardTitle className="text-2xl">{currency.format(data.summary.income)}</CardTitle>
@@ -185,7 +186,7 @@ export function DashboardClient({ name }: DashboardClientProps) {
             Money in
           </CardContent>
         </Card>
-        <Card className="border-border/70 bg-card/90">
+        <Card className="border-border/80 bg-card/90 shadow-sm transition-transform duration-200 hover:-translate-y-0.5">
           <CardHeader className="pb-2">
             <CardDescription>Spending this month</CardDescription>
             <CardTitle className="text-2xl">{currency.format(data.summary.expense)}</CardTitle>
@@ -195,7 +196,7 @@ export function DashboardClient({ name }: DashboardClientProps) {
             Money out
           </CardContent>
         </Card>
-        <Card className="border-border/70 bg-card/90">
+        <Card className="border-border/80 bg-card/90 shadow-sm transition-transform duration-200 hover:-translate-y-0.5">
           <CardHeader className="pb-2">
             <CardDescription>Monthly savings</CardDescription>
             <CardTitle className={`text-2xl ${positiveSavings ? "text-emerald-600" : "text-rose-600"}`}>
@@ -207,7 +208,7 @@ export function DashboardClient({ name }: DashboardClientProps) {
             Income minus spending
           </CardContent>
         </Card>
-        <Card className="border-border/70 bg-card/90">
+        <Card className="border-border/80 bg-card/90 shadow-sm transition-transform duration-200 hover:-translate-y-0.5">
           <CardHeader className="pb-2">
             <CardDescription>Portfolio value</CardDescription>
             <CardTitle className="text-2xl">{currency.format(data.summary.portfolioValue)}</CardTitle>
@@ -219,8 +220,8 @@ export function DashboardClient({ name }: DashboardClientProps) {
         </Card>
       </section>
 
-      <section className="mt-6 grid gap-4 xl:grid-cols-3">
-        <Card className="xl:col-span-2">
+      <section className="mt-6 grid animate-in gap-4 fade-in-0 slide-in-from-bottom-2 duration-500 [animation-delay:180ms] [animation-fill-mode:both] xl:grid-cols-3">
+        <Card className="border-border/80 bg-card/90 shadow-sm transition-transform duration-200 hover:-translate-y-0.5 xl:col-span-2">
           <CardHeader>
             <CardTitle>Monthly income vs spending</CardTitle>
             <CardDescription>Compare trends over the last six months.</CardDescription>
@@ -239,7 +240,7 @@ export function DashboardClient({ name }: DashboardClientProps) {
           </CardContent>
         </Card>
 
-        <Card>
+        <Card className="border-border/80 bg-card/90 shadow-sm transition-transform duration-200 hover:-translate-y-0.5">
           <CardHeader>
             <CardTitle>Investment mix</CardTitle>
             <CardDescription>Current portfolio allocation by asset class.</CardDescription>
@@ -265,8 +266,8 @@ export function DashboardClient({ name }: DashboardClientProps) {
         </Card>
       </section>
 
-      <section className="mt-6">
-        <Card>
+      <section className="mt-6 animate-in fade-in-0 slide-in-from-bottom-2 duration-500 [animation-delay:260ms] [animation-fill-mode:both]">
+        <Card className="border-border/80 bg-card/90 shadow-sm transition-transform duration-200 hover:-translate-y-0.5">
           <CardHeader>
             <CardTitle>Top spending categories</CardTitle>
             <CardDescription>Where your money goes this cycle.</CardDescription>
@@ -294,6 +295,7 @@ export function DashboardClient({ name }: DashboardClientProps) {
           </CardContent>
         </Card>
       </section>
+      </div>
     </div>
   );
 }

@@ -73,76 +73,70 @@ export default function SignIn(){
         setLoading(true)
         await signIn("google", { callbackUrl: "/dashboard" })
       }
+
     return (
-        <div className="relative mx-auto flex min-h-[80vh] w-full max-w-6xl items-center justify-center px-4 py-10 md:px-8">
-            <div className="pointer-events-none absolute inset-0 -z-10 bg-[radial-gradient(circle_at_15%_15%,rgba(59,130,246,0.16),transparent_35%),radial-gradient(circle_at_90%_10%,rgba(16,185,129,0.16),transparent_30%)]" />
-            <Card className="w-full max-w-md border-border/70 bg-card/90 backdrop-blur">
-                <CardHeader>
-                    <CardTitle className="text-2xl">Welcome back</CardTitle>
-                    <CardDescription>
-                        Simple Finance • Make finance simple
-                    </CardDescription>
-                    <CardAction>
-                        <Link href="/sign-up">
-                            <Button 
-                                variant="ghost" 
-                                className="text-sm font-medium h-10 hover:bg-accent hover:text-accent-foreground cursor-pointer">
-                                    Sign Up
-                            </Button>
-                        </Link>
-                    </CardAction>
-                </CardHeader>
-                <CardContent>
-                    <Form {...form}>
-                        <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-8">
-                            <FormField
-                                control={form.control}
-                                name="email"
-                                render={({ field }) => (
-                                    <FormItem>
-                                        <FormLabel>Email</FormLabel>
+        <div className="relative overflow-hidden">
+            <div className="pointer-events-none absolute inset-0 -z-10 bg-[radial-gradient(circle_at_15%_15%,rgba(16,163,127,0.18),transparent_36%),radial-gradient(circle_at_86%_12%,rgba(68,125,255,0.16),transparent_34%)]" />
+            <div className="mx-auto flex min-h-[82vh] w-full max-w-6xl animate-in fade-in-0 items-center justify-center px-4 py-10 duration-500 md:px-8">
+                <Card className="w-full max-w-md animate-in fade-in-0 slide-in-from-bottom-3 border-border/80 bg-card/90 shadow-lg shadow-black/5 duration-500 [animation-fill-mode:both] backdrop-blur-xl">
+                    <CardHeader>
+                        <CardTitle className="text-2xl tracking-tight">Welcome Back</CardTitle>
+                        <CardDescription>
+                            Sign in to your finance control room.
+                        </CardDescription>
+                        <CardAction>
+                            <Link href="/sign-up">
+                                <Button variant="ghost" className="h-9 text-sm font-medium">
+                                    Sign up
+                                </Button>
+                            </Link>
+                        </CardAction>
+                    </CardHeader>
+                    <CardContent>
+                        <Form {...form}>
+                            <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
+                                <FormField
+                                    control={form.control}
+                                    name="email"
+                                    render={({ field }) => (
+                                        <FormItem>
+                                            <FormLabel>Email</FormLabel>
+                                            <FormControl>
+                                                <Input placeholder="you@example.com" {...field} />
+                                            </FormControl>
+                                            <FormMessage />
+                                        </FormItem>
+                                    )}
+                                />
+                                <FormField
+                                    control={form.control}
+                                    name="password"
+                                    render={({ field }) => (
+                                        <FormItem>
+                                        <FormLabel>Password</FormLabel>
                                         <FormControl>
-                                            <Input placeholder="mail@mail.com" {...field} />
+                                            <Input placeholder="********" type="password" {...field} />
                                         </FormControl>
                                         <FormMessage />
-                                    </FormItem>
-                                )}
-                            />
-                            <FormField
-                                control={form.control}
-                                name="password"
-                                render={({ field }) => (
-                                    <FormItem>
-                                    <FormLabel>Password</FormLabel>
-                                    <FormControl>
-                                        <Input
-                                            placeholder="test123"
-                                            type="password"
-                                            {...field}
-                                        />
-                                    </FormControl>
-                                    <FormMessage />
-                                    </FormItem>
-                                )}
-                            />
-                            <CardFooter className="flex-col gap-2">
-                                <Button type="submit" name="login" className="w-full" disabled={loading}>
+                                        </FormItem>
+                                    )}
+                                />
+                                <CardFooter className="px-0 pb-0">
+                                    <Button type="submit" name="login" className="w-full" disabled={loading}>
                                         Login
+                                    </Button>
+                                </CardFooter>
+                            </form>
+                            <Separator orientation="horizontal" className="my-4"/>
+                            <CardFooter className="px-0 pb-0">
+                                <Button onClick={handleGoogle} variant="outline" className="w-full" disabled={loading}>
+                                    Continue with Google
                                 </Button>
                             </CardFooter>
-                            
-                            
-                        </form>
-                        <Separator orientation="horizontal" className="my-2"/>
-                        <CardFooter className="flex-col gap-2">
-                            <Button onClick={handleGoogle} variant="outline" className="w-full" disabled={loading}>
-                                    Login with Google
-                            </Button>
-                        </CardFooter>
-                        
-                    </Form>
-                </CardContent>
-            </Card>
+                        </Form>
+                    </CardContent>
+                </Card>
+            </div>
         </div>
     )
 }

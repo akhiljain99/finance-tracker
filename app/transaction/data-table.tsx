@@ -66,11 +66,11 @@ export function DataTable<TData, TValue>({
           placeholder={filterPlaceholder}
           value={(table.getColumn(filterColumn!)?.getFilterValue() as string) ?? ""}
           onChange={(event) => table.getColumn(filterColumn!)?.setFilterValue(event.target.value)}
-          className="max-w-sm"
+          className="max-w-sm border-border/80 bg-background/90"
         />
       ) : null}
 
-      <div className="overflow-hidden rounded-md border border-border/70">
+      <div className="overflow-hidden rounded-lg border border-border/80 bg-card/60">
         <Table>
           <TableHeader>
             {table.getHeaderGroups().map((headerGroup) => (

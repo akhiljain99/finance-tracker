@@ -2,13 +2,18 @@
 
 import { FormEvent, useCallback, useEffect, useMemo, useState } from "react";
 import type { ColumnDef } from "@tanstack/react-table";
+import { format } from "date-fns";
 import { toast } from "sonner";
-import { Trash2 } from "lucide-react";
+import { CalendarIcon, Trash2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { Calendar } from "@/components/ui/calendar";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { currency } from "@/lib/finance";
+import { cn } from "@/lib/utils";
 import { DataTable } from "./data-table";
 
 type TransactionItem = {
@@ -42,6 +47,20 @@ const assetTypes = [
   "other",
 ];
 
+function toTitleCase(value: string): string {
+  return value
+    .trim()
+    .replace(/\s+/g, " ")
+    .split(" ")
+    .filter(Boolean)
+    .map((word) => word.charAt(0).toUpperCase() + word.slice(1).toLowerCase())
+    .join(" ");
+}
+
+function humanizeAssetType(value: string): string {
+  return toTitleCase(value.replace(/_/g, " "));
+}
+
 async function readJsonSafe<T>(response: Response): Promise<T | null> {
   const contentType = response.headers.get("content-type") ?? "";
   if (!contentType.includes("application/json")) {
@@ -63,7 +82,7 @@ export function TrackerClient() {
   const [kind, setKind] = useState<"income" | "expense">("expense");
   const [categoryName, setCategoryName] = useState("");
   const [amount, setAmount] = useState("");
-  const [transactionDate, setTransactionDate] = useState(new Date().toISOString().slice(0, 10));
+  const [transactionDate, setTransactionDate] = useState<Date | undefined>(new Date());
   const [notes, setNotes] = useState("");
 
   const [assetType, setAssetType] = useState("stock");
@@ -71,7 +90,7 @@ export function TrackerClient() {
   const [symbol, setSymbol] = useState("");
   const [amountInvested, setAmountInvested] = useState("");
   const [currentValue, setCurrentValue] = useState("");
-  const [purchasedOn, setPurchasedOn] = useState(new Date().toISOString().slice(0, 10));
+  const [purchasedOn, setPurchasedOn] = useState<Date | undefined>(new Date());
   const [investmentNotes, setInvestmentNotes] = useState("");
 
   const fetchAll = useCallback(async () => {
@@ -136,15 +155,21 @@ export function TrackerClient() {
       toast.error("Add a category name.");
       return;
     }
+    if (!transactionDate) {
+      toast.error("Select a transaction date.");
+      return;
+    }
+
+    const normalizedCategoryName = toTitleCase(categoryName);
 
     const response = await fetch("/api/transaction", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
         kind,
-        categoryName: categoryName.trim(),
+        categoryName: normalizedCategoryName,
         amount: parsedAmount,
-        transactionDate,
+        transactionDate: format(transactionDate, "yyyy-MM-dd"),
         notes: notes.trim() || undefined,
       }),
     });
@@ -175,6 +200,10 @@ export function TrackerClient() {
       toast.error("Add an investment name.");
       return;
     }
+    if (!purchasedOn) {
+      toast.error("Select a purchase date.");
+      return;
+    }
 
     const response = await fetch("/api/investments", {
       method: "POST",
@@ -185,7 +214,7 @@ export function TrackerClient() {
         symbol: symbol.trim() || undefined,
         amountInvested: invested,
         currentValue: current,
-        purchasedOn,
+        purchasedOn: format(purchasedOn, "yyyy-MM-dd"),
         notes: investmentNotes.trim() || undefined,
       }),
     });
@@ -235,13 +264,14 @@ export function TrackerClient() {
       {
         accessorKey: "categoryName",
         header: "Category",
+        cell: ({ row }) => <span>{toTitleCase(row.original.categoryName)}</span>,
       },
       {
         accessorKey: "kind",
         header: "Type",
         cell: ({ row }) => (
           <span className={row.original.kind === "income" ? "text-emerald-600" : "text-rose-600"}>
-            {row.original.kind}
+            {toTitleCase(row.original.kind)}
           </span>
         ),
       },
@@ -287,7 +317,7 @@ export function TrackerClient() {
       {
         accessorKey: "assetType",
         header: "Asset",
-        cell: ({ row }) => <span>{row.original.assetType.replace(/_/g, " ")}</span>,
+        cell: ({ row }) => <span>{humanizeAssetType(row.original.assetType)}</span>,
       },
       {
         accessorKey: "amountInvested",
@@ -323,18 +353,19 @@ export function TrackerClient() {
   );
 
   return (
-    <div className="relative mx-auto w-full max-w-6xl px-4 py-8 md:px-8">
-      <div className="pointer-events-none absolute inset-0 -z-10 bg-[radial-gradient(circle_at_5%_5%,rgba(14,165,233,0.1),transparent_25%),radial-gradient(circle_at_90%_10%,rgba(16,185,129,0.1),transparent_24%)]" />
+    <div className="relative overflow-hidden">
+      <div className="pointer-events-none absolute inset-0 -z-10 bg-[radial-gradient(circle_at_6%_6%,rgba(16,163,127,0.12),transparent_26%),radial-gradient(circle_at_92%_8%,rgba(67,140,255,0.1),transparent_24%)]" />
+      <div className="mx-auto w-full max-w-6xl animate-in fade-in-0 px-4 py-8 duration-500 md:px-8">
 
-      <section className="mb-6">
+      <section className="mb-6 animate-in fade-in-0 slide-in-from-bottom-2 duration-500 [animation-fill-mode:both]">
         <h1 className="text-3xl font-semibold tracking-tight">Finance Tracker</h1>
         <p className="text-muted-foreground">
           Add expenses, income, and investments. Everything updates your dashboard automatically.
         </p>
       </section>
 
-      <section className="grid gap-4 xl:grid-cols-2">
-        <Card>
+      <section className="grid animate-in gap-4 fade-in-0 slide-in-from-bottom-2 duration-500 [animation-delay:90ms] [animation-fill-mode:both] xl:grid-cols-2">
+        <Card className="border-border/80 bg-card/90 shadow-sm transition-transform duration-200 hover:-translate-y-0.5">
           <CardHeader>
             <CardTitle>Add transaction</CardTitle>
             <CardDescription>Capture income and expenses in real time.</CardDescription>
@@ -343,19 +374,25 @@ export function TrackerClient() {
             <form className="space-y-3" onSubmit={submitTransaction}>
               <div className="grid gap-2">
                 <Label htmlFor="kind">Type</Label>
-                <select
-                  id="kind"
-                  value={kind}
-                  onChange={(event) => setKind(event.target.value as "income" | "expense")}
-                  className="h-10 rounded-md border border-input bg-background px-3 text-sm"
-                >
-                  <option value="expense">Expense</option>
-                  <option value="income">Income</option>
-                </select>
+                <Select value={kind} onValueChange={(value: "income" | "expense") => setKind(value)}>
+                  <SelectTrigger id="kind" className="border-border/80 bg-background/90">
+                    <SelectValue placeholder="Select type" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="expense">Expense</SelectItem>
+                    <SelectItem value="income">Income</SelectItem>
+                  </SelectContent>
+                </Select>
               </div>
               <div className="grid gap-2">
                 <Label htmlFor="category">Category</Label>
-                <Input id="category" value={categoryName} onChange={(event) => setCategoryName(event.target.value)} placeholder="Food, Salary, Rent..." />
+                <Input
+                  id="category"
+                  value={categoryName}
+                  onChange={(event) => setCategoryName(event.target.value)}
+                  onBlur={() => setCategoryName((current) => toTitleCase(current))}
+                  placeholder="Food, Salary, Rent..."
+                />
               </div>
               <div className="grid grid-cols-2 gap-3">
                 <div className="grid gap-2">
@@ -364,7 +401,25 @@ export function TrackerClient() {
                 </div>
                 <div className="grid gap-2">
                   <Label htmlFor="date">Date</Label>
-                  <Input id="date" type="date" value={transactionDate} onChange={(event) => setTransactionDate(event.target.value)} />
+                  <Popover>
+                    <PopoverTrigger asChild>
+                      <Button
+                        id="date"
+                        type="button"
+                        variant="outline"
+                        className={cn(
+                          "w-full justify-start border-border/80 bg-background/90 text-left font-normal",
+                          !transactionDate && "text-muted-foreground"
+                        )}
+                      >
+                        <CalendarIcon className="mr-2 h-4 w-4" />
+                        {transactionDate ? format(transactionDate, "MMM d, yyyy") : "Pick a date"}
+                      </Button>
+                    </PopoverTrigger>
+                    <PopoverContent className="w-auto p-0" align="start">
+                      <Calendar mode="single" selected={transactionDate} onSelect={setTransactionDate} initialFocus />
+                    </PopoverContent>
+                  </Popover>
                 </div>
               </div>
               <div className="grid gap-2">
@@ -376,7 +431,7 @@ export function TrackerClient() {
           </CardContent>
         </Card>
 
-        <Card>
+        <Card className="border-border/80 bg-card/90 shadow-sm transition-transform duration-200 hover:-translate-y-0.5">
           <CardHeader>
             <CardTitle>Add investment</CardTitle>
             <CardDescription>Track stocks, crypto, real estate and more.</CardDescription>
@@ -385,18 +440,18 @@ export function TrackerClient() {
             <form className="space-y-3" onSubmit={submitInvestment}>
               <div className="grid gap-2">
                 <Label htmlFor="asset">Asset class</Label>
-                <select
-                  id="asset"
-                  value={assetType}
-                  onChange={(event) => setAssetType(event.target.value)}
-                  className="h-10 rounded-md border border-input bg-background px-3 text-sm"
-                >
-                  {assetTypes.map((type) => (
-                    <option key={type} value={type}>
-                      {type.replace("_", " ")}
-                    </option>
-                  ))}
-                </select>
+                <Select value={assetType} onValueChange={setAssetType}>
+                  <SelectTrigger id="asset" className="border-border/80 bg-background/90">
+                    <SelectValue placeholder="Select asset class" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {assetTypes.map((type) => (
+                      <SelectItem key={type} value={type}>
+                        {humanizeAssetType(type)}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
               </div>
               <div className="grid grid-cols-2 gap-3">
                 <div className="grid gap-2">
@@ -420,7 +475,25 @@ export function TrackerClient() {
               </div>
               <div className="grid gap-2">
                 <Label htmlFor="purchased-on">Purchase date</Label>
-                <Input id="purchased-on" type="date" value={purchasedOn} onChange={(event) => setPurchasedOn(event.target.value)} />
+                <Popover>
+                  <PopoverTrigger asChild>
+                    <Button
+                      id="purchased-on"
+                      type="button"
+                      variant="outline"
+                      className={cn(
+                        "w-full justify-start border-border/80 bg-background/90 text-left font-normal",
+                        !purchasedOn && "text-muted-foreground"
+                      )}
+                    >
+                      <CalendarIcon className="mr-2 h-4 w-4" />
+                      {purchasedOn ? format(purchasedOn, "MMM d, yyyy") : "Pick a date"}
+                    </Button>
+                  </PopoverTrigger>
+                  <PopoverContent className="w-auto p-0" align="start">
+                    <Calendar mode="single" selected={purchasedOn} onSelect={setPurchasedOn} initialFocus />
+                  </PopoverContent>
+                </Popover>
               </div>
               <div className="grid gap-2">
                 <Label htmlFor="investment-notes">Notes</Label>
@@ -432,8 +505,8 @@ export function TrackerClient() {
         </Card>
       </section>
 
-      <section className="mt-6 grid gap-4 xl:grid-cols-2">
-        <Card>
+      <section className="mt-6 grid animate-in gap-4 fade-in-0 slide-in-from-bottom-2 duration-500 [animation-delay:180ms] [animation-fill-mode:both] xl:grid-cols-2">
+        <Card className="border-border/80 bg-card/90 shadow-sm transition-transform duration-200 hover:-translate-y-0.5">
           <CardHeader>
             <CardTitle>Recent transactions</CardTitle>
             <CardDescription>{loading ? "Loading..." : `${transactions.length} records`}</CardDescription>
@@ -449,7 +522,7 @@ export function TrackerClient() {
           </CardContent>
         </Card>
 
-        <Card>
+        <Card className="border-border/80 bg-card/90 shadow-sm transition-transform duration-200 hover:-translate-y-0.5">
           <CardHeader>
             <CardTitle>Investments</CardTitle>
             <CardDescription>{loading ? "Loading..." : `${investments.length} records`}</CardDescription>
@@ -465,6 +538,7 @@ export function TrackerClient() {
           </CardContent>
         </Card>
       </section>
+      </div>
     </div>
   );
 }

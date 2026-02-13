@@ -20,7 +20,7 @@ export default async function RootLayout({
 
   return (
     <html lang="en" suppressHydrationWarning>
-      <body className="min-h-screen bg-background font-[Space_Grotesk,_Avenir_Next,_Segoe_UI,_sans-serif] antialiased">
+      <body className="min-h-screen bg-background font-[Soehne,_Manrope,_Avenir_Next,_Segoe_UI,_sans-serif] antialiased">
         <ThemeProvider attribute="class" defaultTheme="system" enableSystem disableTransitionOnChange>
           <AppNavbar
             isAuthenticated={Boolean(session?.user?.id)}

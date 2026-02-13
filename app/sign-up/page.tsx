@@ -3,8 +3,8 @@
 import { zodResolver } from "@hookform/resolvers/zod"
 import { useForm } from "react-hook-form"
 import { z } from "zod"
-import { useRouter } from 'next/navigation';
-import { useState } from "react";
+import { useRouter } from 'next/navigation'
+import { useState } from "react"
 import { Button } from "@/components/ui/button"
 import {
   Form,
@@ -22,7 +22,8 @@ import {
   CardTitle,
   } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
-import { toast } from "sonner"  
+import { toast } from "sonner"
+
 const registrationSchema = z.object({
     username: z
       .string()
@@ -32,9 +33,7 @@ const registrationSchema = z.object({
       .max(30, {
         message: "Name must not be longer than 30 characters.",
       }),
-    email: z
-      .string()
-      .email("Invalid email address"),
+    email: z.string().email("Invalid email address"),
     password: z
         .string()
         .min(8, 'Password must be at least 8 characters long')
@@ -45,10 +44,10 @@ const registrationSchema = z.object({
         .max(32, 'Confirm password cannot exceed 32 characters'),
     }).refine((data) => data.password === data.confirmPassword, {
     message: 'Passwords do not match!',
-    path: ['confirmPassword'], // This specifies where the error message will be displayed
+    path: ['confirmPassword'],
     })
 
-  type RegistrationFormValues = z.infer<typeof registrationSchema>
+type RegistrationFormValues = z.infer<typeof registrationSchema>
 
 export default function SignUp(){
     const router = useRouter()
@@ -76,103 +75,96 @@ export default function SignUp(){
                 'Content-Type': 'application/json',
             },
             body: JSON.stringify({ name, email, password}), 
-            });
+            })
+
             if (response.ok) {
                 router.push("/sign-in")
                 toast.success('Account created successfully!')
             } else {
-                const data = await response.json().catch(() => null)
-                toast.error(data?.error ?? "Something went wrong. Please try again.")
+                const payload = await response.json().catch(() => null)
+                toast.error(payload?.error ?? "Something went wrong. Please try again.")
             }
         } catch (error) {
-            console.error('Error submitting form:', error);
+            console.error('Error submitting form:', error)
         } finally {
             setLoading(false)
         }
     }
+
     return (
-        <div className="relative mx-auto flex min-h-[80vh] w-full max-w-6xl items-center justify-center px-4 py-10 md:px-8">
-            <div className="pointer-events-none absolute inset-0 -z-10 bg-[radial-gradient(circle_at_20%_20%,rgba(45,212,191,0.16),transparent_30%),radial-gradient(circle_at_80%_10%,rgba(56,189,248,0.16),transparent_35%)]" />
-            <Card className="w-full max-w-md border-border/70 bg-card/90 backdrop-blur">
-                <CardHeader>
-                    <CardTitle className="text-2xl">Create your account</CardTitle>
-                    <CardDescription>
-                        Join Simple Finance and make finance simple.
-                    </CardDescription>
-                </CardHeader>
-                <CardContent>
-                    <Form {...form}>
-                        <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-8">
-                            <FormField
-                                control={form.control}
-                                name="username"
-                                render={({ field }) => (
-                                    <FormItem>
-                                        <FormLabel>Username</FormLabel>
+        <div className="relative overflow-hidden">
+            <div className="pointer-events-none absolute inset-0 -z-10 bg-[radial-gradient(circle_at_20%_18%,rgba(16,163,127,0.16),transparent_32%),radial-gradient(circle_at_82%_8%,rgba(68,125,255,0.14),transparent_34%)]" />
+            <div className="mx-auto flex min-h-[82vh] w-full max-w-6xl animate-in fade-in-0 items-center justify-center px-4 py-10 duration-500 md:px-8">
+                <Card className="w-full max-w-md animate-in fade-in-0 slide-in-from-bottom-3 border-border/80 bg-card/90 shadow-lg shadow-black/5 duration-500 [animation-fill-mode:both] backdrop-blur-xl">
+                    <CardHeader>
+                        <CardTitle className="text-2xl tracking-tight">Create your account</CardTitle>
+                        <CardDescription>
+                            Start with a clean finance workspace in under a minute.
+                        </CardDescription>
+                    </CardHeader>
+                    <CardContent>
+                        <Form {...form}>
+                            <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
+                                <FormField
+                                    control={form.control}
+                                    name="username"
+                                    render={({ field }) => (
+                                        <FormItem>
+                                            <FormLabel>Username</FormLabel>
+                                            <FormControl>
+                                                <Input placeholder="johndoe" {...field} />
+                                            </FormControl>
+                                            <FormMessage />
+                                        </FormItem>
+                                    )}
+                                />
+                                <FormField
+                                    control={form.control}
+                                    name="email"
+                                    render={({ field }) => (
+                                        <FormItem>
+                                            <FormLabel>Email</FormLabel>
+                                            <FormControl>
+                                                <Input placeholder="you@example.com" {...field} />
+                                            </FormControl>
+                                            <FormMessage />
+                                        </FormItem>
+                                    )}
+                                />
+                                <FormField
+                                    control={form.control}
+                                    name="password"
+                                    render={({ field }) => (
+                                        <FormItem>
+                                        <FormLabel>Password</FormLabel>
                                         <FormControl>
-                                            <Input placeholder="johndoe" {...field} />
+                                            <Input placeholder="********" type="password" {...field} />
                                         </FormControl>
                                         <FormMessage />
-                                    </FormItem>
-                                    
-                                )}
-                            />
-                            <FormField
-                                control={form.control}
-                                name="email"
-                                render={({ field }) => (
-                                    <FormItem>
-                                        <FormLabel>Email</FormLabel>
+                                        </FormItem>
+                                    )}
+                                />
+                                <FormField
+                                    control={form.control}
+                                    name="confirmPassword"
+                                    render={({ field }) => (
+                                        <FormItem>
+                                        <FormLabel>Confirm Password</FormLabel>
                                         <FormControl>
-                                            <Input placeholder="mail@mail.com" {...field} />
+                                            <Input placeholder="********" type="password" {...field} />
                                         </FormControl>
                                         <FormMessage />
-                                    </FormItem>
-                                    
-                                )}
-                            />
-                            <FormField
-                                control={form.control}
-                                name="password"
-                                render={({ field }) => (
-                                    <FormItem>
-                                    <FormLabel>Password</FormLabel>
-                                    <FormControl>
-                                        <Input
-                                            placeholder="test123"
-                                            type="password"
-                                            {...field}
-                                        />
-                                    </FormControl>
-                                    <FormMessage />
-                                    </FormItem>
-                                )}
-                            />
-                            <FormField
-                                control={form.control}
-                                name="confirmPassword"
-                                render={({ field }) => (
-                                    <FormItem>
-                                    <FormLabel>Confirm Password</FormLabel>
-                                    <FormControl>
-                                        <Input
-                                            placeholder="test123"
-                                            type="password"
-                                            {...field}
-                                        />
-                                    </FormControl>
-                                    <FormMessage />
-                                    </FormItem>
-                                )}
-                            />
-                           <Button type="submit" className="w-full" disabled={loading}>
-                                Sign Up
-                            </Button>
-                        </form>
-                    </Form>
-                </CardContent>
-            </Card>
-            
+                                        </FormItem>
+                                    )}
+                                />
+                               <Button type="submit" className="w-full" disabled={loading}>
+                                    Create account
+                                </Button>
+                            </form>
+                        </Form>
+                    </CardContent>
+                </Card>
+            </div>
         </div>
     )
 }
